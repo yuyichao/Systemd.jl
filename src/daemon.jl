@@ -28,6 +28,9 @@ const LISTEN_FDS_START = 3
 
 include("sockets.jl")
 
+@inline _get_path(::Void) = C_NULL
+@inline _get_path(s) = s
+
 """
     listen_fds([unset_environment::Bool]) -> Int
 
@@ -86,8 +89,9 @@ Raise a `SystemError` on failure.
 
 See `sd_is_fifo(3)` for more information.
 """
-function is_fifo(fd, path=C_NULL)
-    res = ccall((:sd_is_fifo, libsystemd), Cint, (Cint, Cstring), fd, path)
+function is_fifo(fd, path=nothing)
+    res = ccall((:sd_is_fifo, libsystemd), Cint, (Cint, Cstring),
+                fd, _get_path(path))
     check_error(:sd_is_fifo, res)
     return res != 0
 end
@@ -105,8 +109,9 @@ Raise a `SystemError` on failure.
 
 See `sd_is_special(3)` for more information.
 """
-function is_special(fd, path=C_NULL)
-    res = ccall((:sd_is_special, libsystemd), Cint, (Cint, Cstring), fd, path)
+function is_special(fd, path=nothing)
+    res = ccall((:sd_is_special, libsystemd), Cint, (Cint, Cstring),
+                fd, _get_path(path))
     check_error(:sd_is_special, res)
     return res != 0
 end
@@ -160,4 +165,209 @@ function is_socket_inet(fd, family=0, typ=0,
                 fd, family, typ, _listening, port)
     check_error(:sd_is_socket_inet, res)
     return res != 0
+end
+
+@inline _unix_path(s::Symbol) = s, Cint(0)
+@inline _unix_path(s::Void) = C_NULL, 0
+@inline _unix_path(s) = if s[1] == '\0'
+    # TODO this might not handle non-NULL terminating arrays very well.
+    s, length(s)
+else
+    s, 0
+end
+
+"""
+    is_socket_unix(fd[, type[, listening[, path]]]) -> Bool
+
+Helper call for identifying a passed file descriptor. Returns `true` if
+the file descriptor is an `AF.UNIX` socket of the specified `type`
+(`SOCK.DGRAM`, `SOCK.STREAM`, ...) and `path`, `false` otherwise.
+If `type` is `0` a socket type check will not be done.
+If `path` is `nothing` a socket path check will not be done.
+The `listening` flag is used the same way as in `is_socket`.
+
+Raise a `SystemError` on failure.
+
+See `sd_is_socket_unix(3)` for more information.
+"""
+function is_socket_unix(fd, typ=0, listening::Union{Void,Bool}=nothing,
+                        path=nothing)
+    _listening = isa(listening, Void) ? -1 : (listening ? 1 : 0)
+    _path, len = _unix_path(path)
+    res = ccall((:sd_is_socket_unix, libsystemd), Cint,
+                (Cint, Cint, Cint, Ptr{UInt8}, Csize_t),
+                fd, typ, _listening, _path, len)
+    check_error(:sd_is_socket_unix, res)
+    return res != 0
+end
+
+"""
+    is_mq(fd[, name]) -> Bool
+
+Helper call for identifying a passed file descriptor. Returns `true` if
+the file descriptor is a POSIX Message Queue of the specified `name`,
+`false` otherwise. If `name` is `nothing` a message queue name check is not
+done.
+
+Raise a `SystemError` on failure.
+
+See `sd_is_mq(3)` for more information.
+"""
+function is_mq(fd, path=nothing)
+    res = ccall((:sd_is_mq, libsystemd), Cint, (Cint, Cstring),
+                fd, _get_path(path))
+    check_error(:sd_is_mq, res)
+    return res != 0
+end
+
+"""
+    notify(state[, pid::Integer][, fds::AbstractVector]
+           [, unset_environment::Bool=false]) -> Bool
+
+Informs systemd about changed daemon state. This takes a number of
+newline separated environment-style variable assignments in a
+string. The following variables are known:
+
+* `READY=1`
+
+    Tells systemd that daemon startup is finished
+    (only relevant for services of `Type=notify`).
+    The passed argument is a boolean `1` or `0`.
+    Since there is little value in signaling non-readiness the only
+    value daemons should send is `READY=1`.
+
+* `STATUS=...`
+
+    Passes a single-line status string back to systemd
+    that describes the daemon state.
+    This is free-form and can be used for various purposes:
+    general state feedback, fsck-like programs could pass completion
+    percentages and failing programs could pass a human
+    readable error message.
+    Example: `STATUS=Completed 66% of file system check...`
+
+* `ERRNO=...`
+
+    If a daemon fails, the errno-style error code,
+    formatted as string. Example: `ERRNO=2` for `ENOENT`.
+
+* `BUSERROR=...`
+
+    If a daemon fails, the D-Bus error-style error code.
+    Example: `BUSERROR=org.freedesktop.DBus.Error.TimedOut`
+
+* `MAINPID=...`
+
+    The main pid of a daemon,
+    in case systemd did not fork off the process itself.
+    Example: `MAINPID=4711`
+
+* `WATCHDOG=1`
+
+    Tells systemd to update the watchdog timestamp.
+    Services using this feature should do this in regular intervals.
+    A watchdog framework can use the timestamps to detect failed services.
+    Also see `watchdog_enabled`.
+
+* `FDSTORE=1`
+
+    Store the file descriptors passed along with the message in the per-service
+    file descriptor store, and pass them to the main process again on next
+    invocation. This variable is only supported when `fds` is provided.
+
+* `WATCHDOG_USEC=...`
+
+    Reset `watchdog_usec` value during runtime.
+    To reset `watchdog_usec` value, start the service again.
+    Example: `WATCHDOG_USEC=20000000`
+
+Daemons can choose to send additional variables. However, it is
+recommended to prefix variable names not listed above with `X_`.
+
+If `pid` is provided, the message is sent on behalf of another
+process, if the appropriate permissions are available.
+
+If `fds` is provided, also passes the specified fd array
+to the service manager for storage.
+This is particularly useful for `FDSTORE=1` messages.
+
+Raise a `SystemError` on failure. Returns `true` if systemd could be notified,
+`false` if it couldn't possibly because systemd is not running.
+
+Example: When a daemon finished starting up, it could issue this
+call to notify systemd about it:
+
+    notify("READY=1")
+
+See `sd_notify(3)` for more information.
+"""
+function notify(state, pid::Integer, fds::AbstractVector{Cint},
+                unset_environment::Bool=false)
+    res = ccall((:sd_pid_notify_with_fds, libsystemd), Cint,
+                (Cint, Cint, Cstring, Ptr{Cint}, Cuint),
+                pid, unset_environment, state, fds, length(fds))
+    check_error(:sd_pid_notify_with_fds, res)
+    return res != 0
+end
+function notify(state, pid::Integer, fds::AbstractVector,
+                unset_environment::Bool=false)
+    return notify(state, pid, convert.(Cint, fds), unset_environment)
+end
+function notify(state, fds::AbstractVector, unset_environment::Bool=false)
+    return notify(state, getpid(), fds, unset_environment)
+end
+function notify(state, pid::Integer, unset_environment::Bool=false)
+    res = ccall((:sd_pid_notify, libsystemd), Cint,
+                (Cint, Cint, Cstring), pid, unset_environment, state)
+    check_error(:sd_pid_notify, res)
+    return res != 0
+end
+function notify(state, unset_environment::Bool=false)
+    res = ccall((:sd_notify, libsystemd), Cint,
+                (Cint, Cstring), unset_environment, state)
+    check_error(:sd_notify, res)
+    return res != 0
+end
+
+"""
+    booted() -> Bool
+
+Returns `true` if the system was booted with systemd.
+Returns `false` if the system was not booted with systemd.
+Raise a `SystemError` on failure.
+Note that many functions above handle non-systemd boots just fine.
+You should NOT protect them with a call to this function.
+Also note that this function checks whether the system, not the user
+session is controlled by systemd. However other functions work
+for both user and system services.
+
+See `sd_booted(3)` for more information.
+"""
+function booted()
+    res = ccall((:sd_booted, libsystemd), Cint, ())
+    check_error(:sd_booted, res)
+    return res != 0
+end
+
+"""
+    watchdog_enabled([unset_environment::Bool=false]) -> UInt64
+
+Returns `> 0` if the service manager expects watchdog keep-alive
+events to be sent regularly via `notify("WATCHDOG=1")`.
+Returns `0` if it does not expect this. The returned value
+is the watchdog timeout in `µs` after which the service manager
+will act on a process that has not sent a watchdog keep alive message.
+This function is useful to implement services that recognize automatically
+if they are being run under supervision of systemd with `WatchdogSec=` set.
+It is recommended for clients to generate keep-alive pings via
+`notify("WATCHDOG=1")` every half of the returned time.
+
+See `sd_watchdog_enabled(3)` for more information.
+"""
+function watchdog_enabled(unset_environment::Bool)
+    usec = Ref{UInt64}(0)
+    res = ccall((:sd_watchdog_enabled, libsystemd), Cint, (Cint, Ptr{UInt64}),
+                unset_environment, usec)
+    check_error(:sd_watchdog_enabled, res)
+    return res == 0 ? UInt64(0) : usec[]
 end
