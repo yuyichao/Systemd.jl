@@ -18,5 +18,6 @@ end
 end
 
 include("daemon.jl")
+include("login.jl")
 
 end
