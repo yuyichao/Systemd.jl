@@ -22,19 +22,19 @@ function Base.show(io::IO, id128::ID128)
     write(io, s)
 end
 
-function id128_randomize()
+function Base.rand(::Type{ID128})
     ref = Ref{ID128}()
     @sdcall(sd_id128_randomize, (Ptr{ID128},), ref)
     return ref[]
 end
 
-function id128_get_machine()
+function get_machine()
     ref = Ref{ID128}()
     @sdcall(sd_id128_get_machine, (Ptr{ID128},), ref)
     return ref[]
 end
 
-function id128_get_boot()
+function get_boot()
     ref = Ref{ID128}()
     @sdcall(sd_id128_get_boot, (Ptr{ID128},), ref)
     return ref[]
