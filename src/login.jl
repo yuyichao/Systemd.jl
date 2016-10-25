@@ -552,39 +552,78 @@ function get_machine_names()
     return consume_pstring(machine_names[], nmachine_names)
 end
 
-# """
-# Monitor object
-# """
-# # typedef struct sd_login_monitor sd_login_monitor;
+type LoginMonitor
+    ptr::Ptr{Void}
+    """
+        LoginMonitor([category])
 
-# """
-# Create a new monitor. Category must be NULL, "seat", "session",
-# "uid", or "machine" to get monitor events for the specific category
-# (or all).
-# """
-# # int sd_login_monitor_new(const char *category, sd_login_monitor** ret);
+    Create a new monitor. Category must be `nothing`, "seat", "session",
+    "uid", or "machine" to get monitor events for the specific category
+    (or all).
+    """
+    function LoginMonitor(category=nothing)
+        self = new(C_NULL)
+        @sdcall(sd_login_monitor_new, (Cstring, Ref{LoginMonitor}),
+                _get_path(category), self)
+        finalizer(self, close)
+        return self
+    end
+end
 
-# """
-# Destroys the passed monitor. Returns NULL.
-# """
-# # sd_login_monitor* sd_login_monitor_unref(sd_login_monitor *m);
+"""
+    close(monitor::LoginMonitor)
 
-# """
-# Flushes the monitor
-# """
-# # int sd_login_monitor_flush(sd_login_monitor *m);
+Destroys the passed `monitor`.
+"""
+function Base.close(monitor::LoginMonitor)
+    ptr = monitor.ptr
+    ptr == C_NULL && return
+    monitor.ptr = C_NULL
+    ccall((:sd_login_monitor_unref, libsystemd), Ptr{Void}, (Ptr{Void},), ptr)
+    return
+end
 
-# """
-# Get FD from monitor
-# """
-# # int sd_login_monitor_get_fd(sd_login_monitor *m);
+Base.cconvert(::Type{Ptr{Void}}, monitor::LoginMonitor) = monitor
+function Base.unsafe_convert(::Type{Ptr{Void}}, monitor::LoginMonitor)
+    ptr = monitor.ptr
+    ptr == C_NULL && throw(UndefRefError())
+    ptr
+end
 
-# """
-# Get poll() mask to monitor
-# """
-# # int sd_login_monitor_get_events(sd_login_monitor *m);
+"""
+    flush(monitor::LoginMonitor)
 
-# """
-# Get timeout for poll(), as usec value relative to CLOCK_MONOTONIC's epoch
-# """
-# int sd_login_monitor_get_timeout(sd_login_monitor *m, uint64_t *timeout_usec);
+Flushes the `monitor`
+"""
+function Base.flush(monitor::LoginMonitor)
+    @sdcall(sd_login_monitor_flush, (Ptr{Void},), monitor)
+    return
+end
+
+"""
+    get_fd(monitor::LoginMonitor) -> Int32
+
+Get FD from `monitor`
+"""
+get_fd(monitor::LoginMonitor) =
+    @sdcall(sd_login_monitor_get_fd, (Ptr{Void},), monitor)
+
+"""
+    get_events(monitor::LoginMonitor) -> Int32
+
+Get `poll()` mask to `monitor`
+"""
+get_events(monitor::LoginMonitor) =
+    @sdcall(sd_login_monitor_get_events, (Ptr{Void},), monitor)
+
+"""
+    get_timeout(monitor::LoginMonitor) -> UInt64
+
+Get timeout for `poll()`, as usec value relative to `CLOCK_MONOTONIC`'s epoch.
+"""
+function get_timeout(monitor::LoginMonitor)
+    timeout = Ref{UInt64}(0)
+    @sdcall(sd_login_monitor_get_timeout, (Ptr{Void}, Ptr{UInt64}),
+            monitor, timeout)
+    return timeout[]
+end
