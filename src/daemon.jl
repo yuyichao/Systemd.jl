@@ -48,11 +48,8 @@ call for all file descriptors that are used.
 
 See `sd_listen_fds(3)` for more information.
 """
-function listen_fds(unset_environment::Bool=true)
-    nfd = ccall((:sd_listen_fds, libsystemd), Cint, (Cint,), unset_environment)
-    check_error(:sd_listen_fds, nfd)
-    return Int(nfd)
-end
+listen_fds(unset_environment::Bool=true) =
+    Int(@sdcall(sd_listen_fds, (Cint,), unset_environment))
 
 """
     listen_fds_with_names([unset_environment::Bool]) -> Int, Vector{String}
@@ -63,17 +60,10 @@ file descriptors.
 See `sd_listen_fds_with_names(3)` for more information.
 """
 function listen_fds_with_names(unset_environment::Bool=true)
-    ret = Ref{Ptr{Void}}(C_NULL)
-    nfd = ccall((:sd_listen_fds_with_names, libsystemd),
-                Cint, (Cint, Ptr{Ptr{Void}}), unset_environment, ret)
-    check_error(:sd_listen_fds_with_names, nfd)
-    names = Vector{String}(nfd)
-    ptr = Ptr{Ptr{Cchar}}(ret[])
-    for i in 1:nfd
-        names[i] = unsafe_wrap(String, unsafe_load(ptr, i), true)
-    end
-    Libc.free(ptr)
-    return Int(nfd), names
+    ret = Ref{Ptr{Cchar}}(C_NULL)
+    nfd = @sdcall(sd_listen_fds_with_names,
+                  (Cint, Ptr{Ptr{Cchar}}), unset_environment, ret)
+    return Int(nfd), consume_pstring(ret[], nfd)
 end
 
 """
@@ -89,12 +79,8 @@ Raise a `SystemError` on failure.
 
 See `sd_is_fifo(3)` for more information.
 """
-function is_fifo(fd, path=nothing)
-    res = ccall((:sd_is_fifo, libsystemd), Cint, (Cint, Cstring),
-                fd, _get_path(path))
-    check_error(:sd_is_fifo, res)
-    return res != 0
-end
+is_fifo(fd, path=nothing) =
+    @sdcall(sd_is_fifo, (Cint, Cstring), fd, _get_path(path)) != 0
 
 """
     is_special(fd[, path]) -> Bool
@@ -109,12 +95,8 @@ Raise a `SystemError` on failure.
 
 See `sd_is_special(3)` for more information.
 """
-function is_special(fd, path=nothing)
-    res = ccall((:sd_is_special, libsystemd), Cint, (Cint, Cstring),
-                fd, _get_path(path))
-    check_error(:sd_is_special, res)
-    return res != 0
-end
+is_special(fd, path=nothing) =
+    @sdcall(sd_is_special, (Cint, Cstring), fd, _get_path(path)) != 0
 
 """
     is_socket(fd, [family, [type[, listening]]]) -> Bool
@@ -136,10 +118,8 @@ See `sd_is_socket(3)` for more information.
 """
 function is_socket(fd, family=0, typ=0, listening::Union{Void,Bool}=nothing)
     _listening = isa(listening, Void) ? -1 : (listening ? 1 : 0)
-    res = ccall((:sd_is_socket, libsystemd), Cint, (Cint, Cint, Cint, Cint),
-                fd, family, typ, _listening)
-    check_error(:sd_is_socket, res)
-    return res != 0
+    return @sdcall(sd_is_socket, (Cint, Cint, Cint, Cint),
+                   fd, family, typ, _listening) != 0
 end
 
 """
@@ -160,11 +140,8 @@ See `sd_is_socket_inet(3)` for more information.
 function is_socket_inet(fd, family=0, typ=0,
                         listening::Union{Void,Bool}=nothing, port=0)
     _listening = isa(listening, Void) ? -1 : (listening ? 1 : 0)
-    res = ccall((:sd_is_socket_inet, libsystemd), Cint,
-                (Cint, Cint, Cint, Cint, UInt16),
-                fd, family, typ, _listening, port)
-    check_error(:sd_is_socket_inet, res)
-    return res != 0
+    return @sdcall(sd_is_socket_inet, (Cint, Cint, Cint, Cint, UInt16),
+                   fd, family, typ, _listening, port)
 end
 
 @inline _unix_path(s::Symbol) = s, Cint(0)
@@ -194,11 +171,8 @@ function is_socket_unix(fd, typ=0, listening::Union{Void,Bool}=nothing,
                         path=nothing)
     _listening = isa(listening, Void) ? -1 : (listening ? 1 : 0)
     _path, len = _unix_path(path)
-    res = ccall((:sd_is_socket_unix, libsystemd), Cint,
-                (Cint, Cint, Cint, Ptr{UInt8}, Csize_t),
-                fd, typ, _listening, _path, len)
-    check_error(:sd_is_socket_unix, res)
-    return res != 0
+    return @sdcall(sd_is_socket_unix, (Cint, Cint, Cint, Ptr{UInt8}, Csize_t),
+                   fd, typ, _listening, _path, len) != 0
 end
 
 """
@@ -213,12 +187,8 @@ Raise a `SystemError` on failure.
 
 See `sd_is_mq(3)` for more information.
 """
-function is_mq(fd, path=nothing)
-    res = ccall((:sd_is_mq, libsystemd), Cint, (Cint, Cstring),
-                fd, _get_path(path))
-    check_error(:sd_is_mq, res)
-    return res != 0
-end
+is_mq(fd, path=nothing) =
+    @sdcall(sd_is_mq, (Cint, Cstring), fd, _get_path(path)) != 0
 
 """
     notify(state[, pid::Integer][, fds::AbstractVector]
@@ -303,31 +273,18 @@ See `sd_notify(3)` for more information.
 """
 function notify(state, pid::Integer, fds::AbstractVector{Cint},
                 unset_environment::Bool=false)
-    res = ccall((:sd_pid_notify_with_fds, libsystemd), Cint,
-                (Cint, Cint, Cstring, Ptr{Cint}, Cuint),
-                pid, unset_environment, state, fds, length(fds))
-    check_error(:sd_pid_notify_with_fds, res)
-    return res != 0
+    @sdcall(sd_pid_notify_with_fds, (Cint, Cint, Cstring, Ptr{Cint}, Cuint),
+            pid, unset_environment, state, fds, length(fds)) != 0
 end
-function notify(state, pid::Integer, fds::AbstractVector,
-                unset_environment::Bool=false)
-    return notify(state, pid, convert.(Cint, fds), unset_environment)
-end
-function notify(state, fds::AbstractVector, unset_environment::Bool=false)
-    return notify(state, getpid(), fds, unset_environment)
-end
-function notify(state, pid::Integer, unset_environment::Bool=false)
-    res = ccall((:sd_pid_notify, libsystemd), Cint,
-                (Cint, Cint, Cstring), pid, unset_environment, state)
-    check_error(:sd_pid_notify, res)
-    return res != 0
-end
-function notify(state, unset_environment::Bool=false)
-    res = ccall((:sd_notify, libsystemd), Cint,
-                (Cint, Cstring), unset_environment, state)
-    check_error(:sd_notify, res)
-    return res != 0
-end
+notify(state, pid::Integer, fds::AbstractVector, unset_environment::Bool=false) =
+    notify(state, pid, convert(Vector{Cint}, fds), unset_environment)
+notify(state, fds::AbstractVector, unset_environment::Bool=false) =
+    notify(state, getpid(), fds, unset_environment)
+notify(state, pid::Integer, unset_environment::Bool=false) =
+    @sdcall(sd_pid_notify, (Cint, Cint, Cstring),
+            pid, unset_environment, state) !=0
+notify(state, unset_environment::Bool=false) =
+    @sdcall(sd_notify, (Cint, Cstring), unset_environment, state) != 0
 
 """
     booted() -> Bool
@@ -343,11 +300,7 @@ for both user and system services.
 
 See `sd_booted(3)` for more information.
 """
-function booted()
-    res = ccall((:sd_booted, libsystemd), Cint, ())
-    check_error(:sd_booted, res)
-    return res != 0
-end
+booted() = @sdcall(sd_booted, ()) != 0
 
 """
     watchdog_enabled([unset_environment::Bool=false]) -> UInt64
@@ -366,8 +319,6 @@ See `sd_watchdog_enabled(3)` for more information.
 """
 function watchdog_enabled(unset_environment::Bool)
     usec = Ref{UInt64}(0)
-    res = ccall((:sd_watchdog_enabled, libsystemd), Cint, (Cint, Ptr{UInt64}),
-                unset_environment, usec)
-    check_error(:sd_watchdog_enabled, res)
-    return res == 0 ? UInt64(0) : usec[]
+    return @sdcall(sd_watchdog_enabled, (Cint, Ptr{UInt64}),
+                   unset_environment, usec) == 0 ? UInt64(0) : usec[]
 end

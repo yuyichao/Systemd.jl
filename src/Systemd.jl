@@ -17,6 +17,26 @@ end
     raise_system_error(func, err)
 end
 
+macro sdcall(fname::Symbol, argtypes, args...)
+    qfname = QuoteNode(fname)
+    quote
+        res = ccall(($qfname, libsystemd), Cint,
+                    $(esc(argtypes)), $((esc(arg) for arg in args)...))
+        check_error($qfname, res)
+        res
+    end
+end
+
+function consume_pstring(_ptr::Ptr, len)
+    res = Vector{String}(len)
+    ptr = Ptr{Ptr{Cchar}}(_ptr)
+    @inbounds for i in 1:len
+        res[i] = unsafe_wrap(String, unsafe_load(ptr, i), true)
+    end
+    Libc.free(ptr)
+    res
+end
+
 include("daemon.jl")
 include("login.jl")
 

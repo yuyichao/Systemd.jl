@@ -1,7 +1,7 @@
 #
 
 module Pid
-import ..check_error, ..libsystemd
+import ..@sdcall
 
 """
     Pid.get_session(pid) -> String
@@ -13,9 +13,7 @@ user.
 """
 function get_session(pid)
     session = Ref{Ptr{Cchar}}(C_NULL)
-    res = ccall((:sd_pid_get_session, libsystemd), Cint,
-                (Cint, Ptr{Ptr{Cchar}}), pid, session)
-    check_error(:sd_pid_get_session, res)
+    @sdcall(sd_pid_get_session, (Cint, Ptr{Ptr{Cchar}}), pid, session)
     return unsafe_wrap(String, session[], true)
 end
 
@@ -30,9 +28,7 @@ throw an error for system processes.
 """
 function get_owner_uid(pid)
     uid = Ref{Int32}(0)
-    res = ccall((:sd_pid_get_owner_uid, libsystemd), Cint,
-                (Cint, Ptr{Int32}), pid, uid)
-    check_error(:sd_pid_get_owner_uid, res)
+    @sdcall(sd_pid_get_owner_uid, (Cint, Ptr{Int32}), pid, uid)
     return uid[]
 end
 
@@ -44,9 +40,7 @@ services. This will throw an error for non-service processes.
 """
 function get_unit(pid)
     unit = Ref{Ptr{Cchar}}(C_NULL)
-    res = ccall((:sd_pid_get_unit, libsystemd), Cint,
-                (Cint, Ptr{Ptr{Cchar}}), pid, unit)
-    check_error(:sd_pid_get_unit, res)
+    @sdcall(sd_pid_get_unit, (Cint, Ptr{Ptr{Cchar}}), pid, unit)
     return unsafe_wrap(String, unit[], true)
 end
 
@@ -58,9 +52,7 @@ services. This will return an error for non-user-service processes.
 """
 function get_user_unit(pid)
     unit = Ref{Ptr{Cchar}}(C_NULL)
-    res = ccall((:sd_pid_get_user_unit, libsystemd), Cint,
-                (Cint, Ptr{Ptr{Cchar}}), pid, unit)
-    check_error(:sd_pid_get_user_unit, res)
+    @sdcall(sd_pid_get_user_unit, (Cint, Ptr{Ptr{Cchar}}), pid, unit)
     return unsafe_wrap(String, unit[], true)
 end
 
@@ -71,9 +63,7 @@ Get slice name from PID.
 """
 function get_slice(pid)
     slice = Ref{Ptr{Cchar}}(C_NULL)
-    res = ccall((:sd_pid_get_slice, libsystemd), Cint,
-                (Cint, Ptr{Ptr{Cchar}}), pid, slice)
-    check_error(:sd_pid_get_slice, res)
+    @sdcall(sd_pid_get_slice, (Cint, Ptr{Ptr{Cchar}}), pid, slice)
     return unsafe_wrap(String, slice[], true)
 end
 
@@ -84,9 +74,7 @@ Get user slice name from PID.
 """
 function get_user_slice(pid)
     slice = Ref{Ptr{Cchar}}(C_NULL)
-    res = ccall((:sd_pid_get_user_slice, libsystemd), Cint,
-                (Cint, Ptr{Ptr{Cchar}}), pid, slice)
-    check_error(:sd_pid_get_user_slice, res)
+    @sdcall(sd_pid_get_user_slice, (Cint, Ptr{Ptr{Cchar}}), pid, slice)
     return unsafe_wrap(String, slice[], true)
 end
 
@@ -98,9 +86,7 @@ container. This will return an error for non-machine processes.
 """
 function get_machine_name(pid)
     machine_name = Ref{Ptr{Cchar}}(C_NULL)
-    res = ccall((:sd_pid_get_machine_name, libsystemd), Cint,
-                (Cint, Ptr{Ptr{Cchar}}), pid, machine_name)
-    check_error(:sd_pid_get_machine_name, res)
+    @sdcall(sd_pid_get_machine_name, (Cint, Ptr{Ptr{Cchar}}), pid, machine_name)
     return unsafe_wrap(String, machine_name[], true)
 end
 
@@ -112,15 +98,13 @@ hierarchy.
 """
 function get_cgroup(pid)
     cgroup = Ref{Ptr{Cchar}}(C_NULL)
-    res = ccall((:sd_pid_get_cgroup, libsystemd), Cint,
-                (Cint, Ptr{Ptr{Cchar}}), pid, cgroup)
-    check_error(:sd_pid_get_cgroup, res)
+    @sdcall(sd_pid_get_cgroup, (Cint, Ptr{Ptr{Cchar}}), pid, cgroup)
     return unsafe_wrap(String, cgroup[], true)
 end
 end
 
 module Peer
-import ..check_error, ..libsystemd
+import ..@sdcall
 
 """
     Peer.get_session(fd) -> String
@@ -130,9 +114,7 @@ of a connected `AF.UNIX` socket.
 """
 function get_session(fd)
     slice = Ref{Ptr{Cchar}}(C_NULL)
-    res = ccall((:sd_peer_get_session, libsystemd), Cint,
-                (Cint, Ptr{Ptr{Cchar}}), fd, slice)
-    check_error(:sd_peer_get_session, res)
+    @sdcall(sd_peer_get_session, (Cint, Ptr{Ptr{Cchar}}), fd, slice)
     return unsafe_wrap(String, slice[], true)
 end
 
@@ -144,9 +126,7 @@ a connected `AF.UNIX` socket
 """
 function get_owner_uid(fd)
     uid = Ref{Int32}(0)
-    res = ccall((:sd_peer_get_owner_uid, libsystemd), Cint,
-                (Cint, Ptr{Int32}), fd, uid)
-    check_error(:sd_peer_get_owner_uid, res)
+    @sdcall(sd_peer_get_owner_uid, (Cint, Ptr{Int32}), fd, uid)
     return uid[]
 end
 
@@ -158,9 +138,7 @@ a connected `AF.UNIX` socket
 """
 function get_unit(fd)
     slice = Ref{Ptr{Cchar}}(C_NULL)
-    res = ccall((:sd_peer_get_unit, libsystemd), Cint,
-                (Cint, Ptr{Ptr{Cchar}}), fd, slice)
-    check_error(:sd_peer_get_unit, res)
+    @sdcall(sd_peer_get_unit, (Cint, Ptr{Ptr{Cchar}}), fd, slice)
     return unsafe_wrap(String, slice[], true)
 end
 
@@ -172,9 +150,7 @@ a connected `AF.UNIX` socket
 """
 function get_user_unit(fd)
     slice = Ref{Ptr{Cchar}}(C_NULL)
-    res = ccall((:sd_peer_get_user_unit, libsystemd), Cint,
-                (Cint, Ptr{Ptr{Cchar}}), fd, slice)
-    check_error(:sd_peer_get_user_unit, res)
+    @sdcall(sd_peer_get_user_unit, (Cint, Ptr{Ptr{Cchar}}), fd, slice)
     return unsafe_wrap(String, slice[], true)
 end
 
@@ -186,9 +162,7 @@ a connected `AF.UNIX` socket
 """
 function get_slice(fd)
     slice = Ref{Ptr{Cchar}}(C_NULL)
-    res = ccall((:sd_peer_get_slice, libsystemd), Cint,
-                (Cint, Ptr{Ptr{Cchar}}), fd, slice)
-    check_error(:sd_peer_get_slice, res)
+    @sdcall(sd_peer_get_slice, (Cint, Ptr{Ptr{Cchar}}), fd, slice)
     return unsafe_wrap(String, slice[], true)
 end
 
@@ -200,9 +174,7 @@ a connected `AF.UNIX` socket
 """
 function get_user_slice(fd)
     slice = Ref{Ptr{Cchar}}(C_NULL)
-    res = ccall((:sd_peer_get_user_slice, libsystemd), Cint,
-                (Cint, Ptr{Ptr{Cchar}}), fd, slice)
-    check_error(:sd_peer_get_user_slice, res)
+    @sdcall(sd_peer_get_user_slice, (Cint, Ptr{Ptr{Cchar}}), fd, slice)
     return unsafe_wrap(String, slice[], true)
 end
 
@@ -214,9 +186,7 @@ peer of a connected `AF.UNIX` socket
 """
 function get_machine_name(fd)
     machine_name = Ref{Ptr{Cchar}}(C_NULL)
-    res = ccall((:sd_peer_get_machine_name, libsystemd), Cint,
-                (Cint, Ptr{Ptr{Cchar}}), fd, machine_name)
-    check_error(:sd_peer_get_machine_name, res)
+    @sdcall(sd_peer_get_machine_name, (Cint, Ptr{Ptr{Cchar}}), fd, machine_name)
     return unsafe_wrap(String, machine_name[], true)
 end
 
@@ -228,15 +198,13 @@ of a connected `AF.UNIX` socket.
 """
 function get_cgroup(fd)
     cgroup = Ref{Ptr{Cchar}}(C_NULL)
-    res = ccall((:sd_peer_get_cgroup, libsystemd), Cint,
-                (Cint, Ptr{Ptr{Cchar}}), fd, cgroup)
-    check_error(:sd_peer_get_cgroup, res)
+    @sdcall(sd_peer_get_cgroup, (Cint, Ptr{Ptr{Cchar}}), fd, cgroup)
     return unsafe_wrap(String, cgroup[], true)
 end
 end
 
 module Uid
-import ..check_error, ..libsystemd
+import ..@sdcall, ..consume_pstring
 
 """
     Uid.get_state(uid) -> String
@@ -245,9 +213,7 @@ Get state from UID. Possible states: offline, lingering, online, active, closing
 """
 function get_state(uid)
     state = Ref{Ptr{Cchar}}(C_NULL)
-    res = ccall((:sd_uid_get_state, libsystemd), Cint,
-                (Cint, Ptr{Ptr{Cchar}}), uid, state)
-    check_error(:sd_uid_get_state, res)
+    @sdcall(sd_uid_get_state, (Cint, Ptr{Ptr{Cchar}}), uid, state)
     return unsafe_wrap(String, state[], true)
 end
 
@@ -258,9 +224,7 @@ Return primary session of user, if there is any
 """
 function get_display(uid)
     display = Ref{Ptr{Cchar}}(C_NULL)
-    res = ccall((:sd_uid_get_display, libsystemd), Cint,
-                (Cint, Ptr{Ptr{Cchar}}), uid, display)
-    check_error(:sd_uid_get_display, res)
+    @sdcall(sd_uid_get_display, (Cint, Ptr{Ptr{Cchar}}), uid, display)
     return unsafe_wrap(String, display[], true)
 end
 
@@ -270,83 +234,55 @@ end
 Return `true` if UID has session on seat.
 If `require_active` is `true`, this will look for active sessions only.
 """
-function is_on_seat(uid, seat, require_active::Bool=false)
-    res = ccall((:sd_uid_is_on_seat, libsystemd), Cint,
-                (Cint, Cint, Cstring), uid, require_active, seat)
-    check_error(:sd_uid_is_on_seat, res)
-    return res != 0
-end
+is_on_seat(uid, seat, require_active::Bool=false) =
+    @sdcall(sd_uid_is_on_seat, (Cint, Cint, Cstring),
+            uid, require_active, seat) != 0
 
 """
     Uid.get_sessions(uid[, require_active=false]) -> Vector{String}
 
 Return sessions of user. If `require_active` is `true`, this will look for
 active sessions only.
-
-Returns the number of sessions. If sessions is NULL, this will just return the number of sessions.
 """
 function get_sessions(uid, require_active::Bool=false)
-    ret = Ref{Ptr{Void}}(C_NULL)
-    nsessions = ccall((:sd_uid_get_sessions, libsystemd),
-                      Cint, (Cint, Cint, Ptr{Ptr{Void}}),
-                      uid, require_active, ret)
-    check_error(:sd_uid_get_sessions, nsessions)
-    sessions = Vector{String}(nsessions)
-    ptr = Ptr{Ptr{Cchar}}(ret[])
-    for i in 1:nsessions
-        sessions[i] = unsafe_wrap(String, unsafe_load(ptr, i), true)
-    end
-    Libc.free(ptr)
-    return sessions
+    ret = Ref{Ptr{Cchar}}(C_NULL)
+    nsessions = @sdcall(sd_uid_get_sessions, (Cint, Cint, Ptr{Ptr{Cchar}}),
+                        uid, require_active, ret)
+    return consume_pstring(ret[], nsessions)
 end
 
 """
-Return seats of user is on. If require_active is true, this will look for
-active seats only. Returns the number of seats.
-If seats is NULL, this will just return the number of seats.
+    Uid.get_seats(uid[, require_active=false]) -> Vector{String}
+
+Return seats of user is on. If `require_active` is `true`, this will look for
+active seats only.
 """
 function get_seats(uid, require_active::Bool=false)
-    ret = Ref{Ptr{Void}}(C_NULL)
-    nseats = ccall((:sd_uid_get_seats, libsystemd),
-                   Cint, (Cint, Cint, Ptr{Ptr{Void}}),
-                   uid, require_active, ret)
-    check_error(:sd_uid_get_seats, nseats)
-    seats = Vector{String}(nseats)
-    ptr = Ptr{Ptr{Cchar}}(ret[])
-    for i in 1:nseats
-        seats[i] = unsafe_wrap(String, unsafe_load(ptr, i), true)
-    end
-    Libc.free(ptr)
-    return seats
+    ret = Ref{Ptr{Cchar}}(C_NULL)
+    nseats = @sdcall(sd_uid_get_seats, (Cint, Cint, Ptr{Ptr{Cchar}}),
+                     uid, require_active, ret)
+    return consume_pstring(ret[], nseats)
 end
 end
 
 module Session
-import ..check_error, ..libsystemd
+import ..@sdcall
 
 """
     Session.is_active(session) -> Bool
 
 Return `true` if the `session` is active.
 """
-function is_active(session)
-    ret = ccall((:sd_session_is_active, libsystemd),
-                Cint, (Cstring,), session)
-    check_error(:sd_session_is_active, ret)
-    return ret != 0
-end
+is_active(session) =
+    @sdcall(sd_session_is_active, (Cstring,), session) != 0
 
 """
     Session.is_remote(session) -> Bool
 
 Return `true` if the `session` is remote.
 """
-function is_remote(session)
-    ret = ccall((:sd_session_is_remote, libsystemd),
-                Cint, (Cstring,), session)
-    check_error(:sd_session_is_remote, ret)
-    return ret != 0
-end
+is_remote(session) =
+    @sdcall(sd_session_is_remote, (Cstring,), session) != 0
 
 """
     Session.get_state(session) -> String
@@ -356,9 +292,7 @@ This function is a more generic version of `Session.is_active`.
 """
 function get_state(session)
     state = Ref{Ptr{Cchar}}(C_NULL)
-    res = ccall((:sd_session_get_state, libsystemd), Cint,
-                (Cstring, Ptr{Ptr{Cchar}}), session, state)
-    check_error(:sd_session_get_state, res)
+    @sdcall(sd_session_get_state, (Cstring, Ptr{Ptr{Cchar}}), session, state)
     return unsafe_wrap(String, state[], true)
 end
 
@@ -369,9 +303,7 @@ Determine user ID of `session`
 """
 function get_uid(session)
     uid = Ref{Int32}(0)
-    res = ccall((:sd_session_get_uid, libsystemd), Cint,
-                (Cstring, Ptr{Int32}), session, uid)
-    check_error(:sd_session_get_uid, res)
+    @sdcall(sd_session_get_uid, (Cstring, Ptr{Int32}), session, uid)
     return uid[]
 end
 
@@ -382,9 +314,7 @@ Determine seat of `session`
 """
 function get_seat(session)
     seat = Ref{Ptr{Cchar}}(C_NULL)
-    res = ccall((:sd_session_get_seat, libsystemd), Cint,
-                (Cstring, Ptr{Ptr{Cchar}}), session, seat)
-    check_error(:sd_session_get_seat, res)
+    @sdcall(sd_session_get_seat, (Cstring, Ptr{Ptr{Cchar}}), session, seat)
     return unsafe_wrap(String, seat[], true)
 end
 
@@ -395,9 +325,7 @@ Determine the (PAM) service name this `session` was registered by.
 """
 function get_service(session)
     service = Ref{Ptr{Cchar}}(C_NULL)
-    res = ccall((:sd_session_get_service, libsystemd), Cint,
-                (Cstring, Ptr{Ptr{Cchar}}), session, service)
-    check_error(:sd_session_get_service, res)
+    @sdcall(sd_session_get_service, (Cstring, Ptr{Ptr{Cchar}}), session, service)
     return unsafe_wrap(String, service[], true)
 end
 
@@ -409,9 +337,7 @@ Determine the type of this `session`, i.e. one of
 """
 function get_type(session)
     typ = Ref{Ptr{Cchar}}(C_NULL)
-    res = ccall((:sd_session_get_type, libsystemd), Cint,
-                (Cstring, Ptr{Ptr{Cchar}}), session, typ)
-    check_error(:sd_session_get_type, res)
+    @sdcall(sd_session_get_type, (Cstring, Ptr{Ptr{Cchar}}), session, typ)
     return unsafe_wrap(String, typ[], true)
 end
 
@@ -423,9 +349,7 @@ i.e. one of "user", "greeter" or "lock-screen".
 """
 function get_class(session)
     class = Ref{Ptr{Cchar}}(C_NULL)
-    res = ccall((:sd_session_get_class, libsystemd), Cint,
-                (Cstring, Ptr{Ptr{Cchar}}), session, class)
-    check_error(:sd_session_get_class, res)
+    @sdcall(sd_session_get_class, (Cstring, Ptr{Ptr{Cchar}}), session, class)
     return unsafe_wrap(String, class[], true)
 end
 
@@ -437,9 +361,7 @@ i.e. something like "GNOME", "KDE" or "systemd-console".
 """
 function get_desktop(session)
     desktop = Ref{Ptr{Cchar}}(C_NULL)
-    res = ccall((:sd_session_get_desktop, libsystemd), Cint,
-                (Cstring, Ptr{Ptr{Cchar}}), session, desktop)
-    check_error(:sd_session_get_desktop, res)
+    @sdcall(sd_session_get_desktop, (Cstring, Ptr{Ptr{Cchar}}), session, desktop)
     return unsafe_wrap(String, desktop[], true)
 end
 
@@ -450,9 +372,7 @@ Determine the X11 display of this `session`.
 """
 function get_display(session)
     display = Ref{Ptr{Cchar}}(C_NULL)
-    res = ccall((:sd_session_get_display, libsystemd), Cint,
-                (Cstring, Ptr{Ptr{Cchar}}), session, display)
-    check_error(:sd_session_get_display, res)
+    @sdcall(sd_session_get_display, (Cstring, Ptr{Ptr{Cchar}}), session, display)
     return unsafe_wrap(String, display[], true)
 end
 
@@ -463,9 +383,8 @@ Determine the remote host of this `session`.
 """
 function get_remote_host(session)
     remote_host = Ref{Ptr{Cchar}}(C_NULL)
-    res = ccall((:sd_session_get_remote_host, libsystemd), Cint,
-                (Cstring, Ptr{Ptr{Cchar}}), session, remote_host)
-    check_error(:sd_session_get_remote_host, res)
+    @sdcall(sd_session_get_remote_host, (Cstring, Ptr{Ptr{Cchar}}),
+            session, remote_host)
     return unsafe_wrap(String, remote_host[], true)
 end
 
@@ -476,9 +395,8 @@ Determine the remote user of this `session` (if provided by PAM).
 """
 function get_remote_user(session)
     remote_user = Ref{Ptr{Cchar}}(C_NULL)
-    res = ccall((:sd_session_get_remote_user, libsystemd), Cint,
-                (Cstring, Ptr{Ptr{Cchar}}), session, remote_user)
-    check_error(:sd_session_get_remote_user, res)
+    @sdcall(sd_session_get_remote_user, (Cstring, Ptr{Ptr{Cchar}}),
+            session, remote_user)
     return unsafe_wrap(String, remote_user[], true)
 end
 
@@ -489,9 +407,7 @@ Determine the TTY of this `session`.
 """
 function get_tty(session)
     tty = Ref{Ptr{Cchar}}(C_NULL)
-    res = ccall((:sd_session_get_tty, libsystemd), Cint,
-                (Cstring, Ptr{Ptr{Cchar}}), session, tty)
-    check_error(:sd_session_get_tty, res)
+    @sdcall(sd_session_get_tty, (Cstring, Ptr{Ptr{Cchar}}), session, tty)
     return unsafe_wrap(String, tty[], true)
 end
 
@@ -502,15 +418,13 @@ Determine the VT number of this `session`.
 """
 function get_vt(session)
     vt = Ref{Int32}(0)
-    res = ccall((:sd_session_get_vt, libsystemd), Cint,
-                (Cstring, Ptr{Int32}), session, vt)
-    check_error(:sd_session_get_vt, res)
+    @sdcall(sd_session_get_vt, (Cstring, Ptr{Int32}), session, vt)
     return vt[]
 end
 end
 
 module Seat
-import ..check_error, ..libsystemd
+import ..@sdcall, ..consume_pstring
 
 """
     Seat.get_active(seat) -> String, Int32
@@ -520,9 +434,8 @@ Return active session and user of `seat`
 function get_active(seat)
     user = Ref{Int32}(0)
     session = Ref{Ptr{Cchar}}(C_NULL)
-    res = ccall((:sd_seat_get_active, libsystemd), Cint,
-                (Cstring, Ptr{Ptr{Cchar}}, Ptr{Int32}), seat, session, user)
-    check_error(:sd_seat_get_active, res)
+    @sdcall(sd_seat_get_active, (Cstring, Ptr{Ptr{Cchar}}, Ptr{Int32}),
+            seat, session, user)
     return unsafe_wrap(String, session[], true), user[]
 end
 
@@ -535,18 +448,11 @@ function get_sessions(seat)
     user = Ref{Ptr{Int32}}(C_NULL)
     session = Ref{Ptr{Ptr{Cchar}}}(C_NULL)
     nuser = Ref{Int32}(0)
-    res = ccall((:sd_seat_get_sessions, libsystemd), Cint,
-                (Cstring, Ptr{Ptr{Ptr{Cchar}}}, Ptr{Ptr{Int32}},
-                 Ptr{Int32}), seat, session, user, nuser)
-    check_error(:sd_seat_get_sessions, res)
-    user_vec = unsafe_wrap(Array, user[], nuser[], true)
-    session_vec = Vector{String}(res)
-    ptr = session[]
-    for i in 1:res
-        session_vec[i] = unsafe_wrap(String, unsafe_load(ptr, i), true)
-    end
-    Libc.free(ptr)
-    return session_vec, user_vec
+    res = @sdcall(sd_seat_get_sessions,
+                  (Cstring, Ptr{Ptr{Ptr{Cchar}}}, Ptr{Ptr{Int32}}, Ptr{Int32}),
+                  seat, session, user, nuser)
+    return (consume_pstring(session[], res),
+            unsafe_wrap(Array, user[], nuser[], true))
 end
 
 """
@@ -554,24 +460,15 @@ end
 
 Return whether the `seat` is multi-session capable
 """
-function can_multi_session(seat)
-    ret = ccall((:sd_seat_can_multi_session, libsystemd),
-                Cint, (Cstring,), seat)
-    check_error(:sd_seat_can_multi_session, ret)
-    return ret != 0
-end
+can_multi_session(seat) =
+    @sdcall(sd_seat_can_multi_session, (Cstring,), seat) != 0
 
 """
     Seat.can_tty(seat) -> Bool
 
 Return whether the `seat` is TTY capable, i.e. suitable for showing console UIs
 """
-function can_tty(seat)
-    ret = ccall((:sd_seat_can_tty, libsystemd),
-                Cint, (Cstring,), seat)
-    check_error(:sd_seat_can_tty, ret)
-    return ret != 0
-end
+can_tty(seat) = @sdcall(sd_seat_can_tty, (Cstring,), seat) != 0
 
 """
     Seat.can_graphical(seat) -> Bool
@@ -579,16 +476,13 @@ end
 Return whether the `seat` is graphics capable,
 i.e. suitable for showing graphical UIs
 """
-function can_graphical(seat)
-    ret = ccall((:sd_seat_can_graphical, libsystemd),
-                Cint, (Cstring,), seat)
-    check_error(:sd_seat_can_graphical, ret)
-    return ret != 0
-end
+can_graphical(seat) = @sdcall(sd_seat_can_graphical, (Cstring,), seat) != 0
 end
 
 module Machine
+import ..@sdcall
 import ..check_error, ..libsystemd
+
 """
     get_class(machine) -> String
 
@@ -596,9 +490,7 @@ Return the class of `machine`
 """
 function get_class(machine)
     class = Ref{Ptr{Cchar}}(C_NULL)
-    res = ccall((:sd_machine_get_class, libsystemd), Cint,
-                (Cstring, Ptr{Ptr{Cchar}}), machine, class)
-    check_error(:sd_machine_get_class, res)
+    @sdcall(sd_machine_get_class, (Cstring, Ptr{Ptr{Cchar}}), machine, class)
     return unsafe_wrap(String, class[], true)
 end
 
@@ -609,35 +501,56 @@ Return the list if host-side network interface indices of a `machine`
 """
 function get_ifindices(machine)
     ifindices = Ref{Ptr{Int32}}(C_NULL)
-    res = ccall((:sd_machine_get_ifindices, libsystemd), Cint,
-                (Cstring, Ptr{Ptr{Cchar}}), machine, ifindices)
-    check_error(:sd_machine_get_ifindices, res)
+    res = @sdcall(sd_machine_get_ifindices, (Cstring, Ptr{Ptr{Cchar}}),
+                  machine, ifindices)
     return unsafe_warp(Array, ifindices[], res, true)
 end
 end
 
-# """
-# Get all seats, store in *seats. Returns the number of seats. If
-# seats is NULL, this only returns the number of seats.
-# """
-# # int sd_get_seats(char ***seats);
+"""
+    get_seats() -> Vector{String}
 
-# """
-# Get all sessions, store in *sessions. Returns the number of
-# sessions. If sessions is NULL, this only returns the number of sessions.
-# """
-# # int sd_get_sessions(char ***sessions);
+Get all seats.
+"""
+function get_seats()
+    seats = Ref{Ptr{Ptr{Cchar}}}(C_NULL)
+    nseats = @sdcall(sd_get_seats, (Ptr{Ptr{Ptr{Cchar}}},), seats)
+    return consume_pstring(seats[], nseats)
+end
 
-# """
-# Get all logged in users, store in *users. Returns the number of
-# users. If users is NULL, this only returns the number of users.
-# """
-# # int sd_get_uids(uid_t **users);
+"""
+    get_sessions() -> Vector{String}
 
-# """
-# Get all running virtual machines/containers
-# """
-# # int sd_get_machine_names(char ***machines);
+Get all sessions.
+"""
+function get_sessions()
+    sessions = Ref{Ptr{Ptr{Cchar}}}(C_NULL)
+    nsessions = @sdcall(sd_get_sessions, (Ptr{Ptr{Ptr{Cchar}}},), sessions)
+    return consume_pstring(sessions[], nsessions)
+end
+
+"""
+    get_uids() -> Vector{Int32}
+
+Get all logged in users.
+"""
+function get_uids()
+    uids = Ref{Ptr{Int32}}(C_NULL)
+    nuids = @sdcall(sd_get_uids, (Ptr{Ptr{Int32}},), uids)
+    return unsafe_wrap(Array, uids[], nuids, true)
+end
+
+"""
+    get_machine_names() -> Vector{String}
+
+Get all running virtual machines/containers
+"""
+function get_machine_names()
+    machine_names = Ref{Ptr{Ptr{Cchar}}}(C_NULL)
+    nmachine_names = @sdcall(sd_get_machine_names, (Ptr{Ptr{Ptr{Cchar}}},),
+                             machine_names)
+    return consume_pstring(machine_names[], nmachine_names)
+end
 
 # """
 # Monitor object
