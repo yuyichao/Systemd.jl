@@ -1,6 +1,6 @@
 #
+# 128-bit ID APIs. See `sd-id128(3)` for more information.
 
-"128-bit ID APIs. See `sd-id128(3)` for more information."
 const STRING_MAX = 33
 
 immutable ID128
