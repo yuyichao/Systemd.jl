@@ -627,3 +627,20 @@ function get_timeout(monitor::LoginMonitor)
             monitor, timeout)
     return timeout[]
 end
+
+"""
+    get_timeout(monitor::LoginMonitor, timeout_s::Real=-1) -> Bool
+
+Wait until a login event happens or times out. Returns if any events happens.
+"""
+function Base.wait(monitor::LoginMonitor, timeout_s::Real=-1)
+    rfd = RawFD(get_fd(monitor))
+    timeout = get_timeout(monitor)
+    if timeout != -1 % UInt64
+        timeout_s = min(timeout_s, timeout / 1e6)
+    end
+    rd, wr = event_to_rw(get_events(monitor))
+    res = poll_fd(rfd, timeout_s, readable=rd, writable=wr)
+    flush(monitor)
+    return res.readable || res.writable
+end

@@ -37,6 +37,13 @@ function consume_pstring(_ptr::Ptr, len)
     res
 end
 
+const POLLIN = 0x1
+const POLLOUT = 0x4
+
+function event_to_rw(event)
+    return event & POLLIN != 0, event & POLLOUT != 0
+end
+
 include("daemon.jl")
 include("login.jl")
 
