@@ -15,6 +15,8 @@ immutable ID128
     end
 end
 
+const ID128_NULL = ID128(0, 0)
+
 function Base.show(io::IO, id128::ID128)
     s = Vector{Int8}(STRING_MAX - 1)
     ccall((:sd_id128_to_string, libsystemd), Ptr{Void},

@@ -47,5 +47,6 @@ end
 include("daemon.jl")
 include("login.jl")
 include("id128.jl")
+include("bus.jl")
 
 end
