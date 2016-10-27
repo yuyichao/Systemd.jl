@@ -254,6 +254,9 @@ Base.close(bus::Bus) =
     ccall((:sd_bus_close, libsystemd), Void, (Ptr{Void},), bus)
 
 function flush_close_unref(bus::Bus)
+    ptr = bus.ptr
+    ptr == C_NULL && return
+    bus.ptr = C_NULL
     ccall((:sd_bus_flush_close_unref, libsystemd), Ptr{Void}, (Ptr{Void},), bus)
     return
 end
@@ -279,5 +282,129 @@ function get_tid(bus::Bus)
 end
 
 # int sd_bus_get_owner_creds(sd_bus *bus, uint64_t creds_mask, sd_bus_creds **ret);
+
+type Message
+    ptr::Ptr{Void}
+    function Message()
+        self = new(C_NULL)
+        finalizer(self, unref)
+        return self
+    end
+end
+
+Base.cconvert(::_Type{Ptr{Void}}, msg::Message) = msg
+function Base.unsafe_convert(::_Type{Ptr{Void}}, msg::Message)
+    ptr = msg.ptr
+    ptr == C_NULL && throw(UndefRefError())
+    ptr
+end
+
+function unref(msg::Message)
+    ptr = msg.ptr
+    ptr == C_NULL && return
+    msg.ptr = C_NULL
+    ccall((:sd_bus_message_unref, libsystemd), Ptr{Void}, (Ptr{Void},), ptr)
+    return
+end
+
+function new_signal(bus::Bus, path, iface, member)
+    msg = Message()
+    @sdcall(sd_bus_message_new_signal,
+            (Ptr{Void}, Ref{Message}, Cstring, Cstring, Cstring),
+            bus, msg, path, iface, member)
+    return msg
+end
+
+function new_method_call(bus::Bus, dest, path, iface, member)
+    msg = Message()
+    @sdcall(sd_bus_message_new_method_call,
+            (Ptr{Void}, Ref{Message}, Cstring, Cstring, Cstring, Cstring),
+            bus, msg, dest, path, iface, member)
+    return msg
+end
+
+function new_method_return(bus::Bus)
+    msg = Message()
+    @sdcall(sd_bus_message_new_method_return,
+            (Ptr{Void}, Ref{Message}), bus, msg)
+    return msg
+end
+
+# int sd_bus_message_new_method_error(sd_bus_message *call, sd_bus_message **m, const sd_bus_error *e);
+# int sd_bus_message_new_method_errorf(sd_bus_message *call, sd_bus_message **m, const char *name, const char *format, ...) _sd_printf_(4, 5);
+# int sd_bus_message_new_method_errno(sd_bus_message *call, sd_bus_message **m, int error, const sd_bus_error *e);
+# int sd_bus_message_new_method_errnof(sd_bus_message *call, sd_bus_message **m, int error, const char *format, ...) _sd_printf_(4, 5);
+
+function get_type(msg::Message)
+    typ = Ref{UInt8}(0)
+    @sdcall(sd_bus_message_get_type, (Ptr{Void}, Ptr{UInt8}), msg, typ)
+    return typ[]
+end
+function get_cookie(msg::Message)
+    cookie = Ref{UInt64}(0)
+    @sdcall(sd_bus_message_get_cookie, (Ptr{Void}, Ptr{UInt64}), msg, cookie)
+    return cookie[]
+end
+function get_reply_cookie(msg::Message)
+    cookie = Ref{UInt64}(0)
+    @sdcall(sd_bus_message_get_reply_cookie,
+            (Ptr{Void}, Ptr{UInt64}), msg, cookie)
+    return cookie[]
+end
+
+function set_priority(msg::Message, priority)
+    @sdcall(sd_bus_message_set_priority, (Ptr{Void}, Int64), msg, priority)
+    return
+end
+function get_priority(msg::Message)
+    priority = Ref{UInt64}(0)
+    @sdcall(sd_bus_message_get_priority, (Ptr{Void}, Ptr{UInt64}), msg, priority)
+    return priority[]
+end
+
+function set_expect_reply(msg::Message, b::Bool)
+    @sdcall(sd_bus_message_set_expect_reply, (Ptr{Void}, Cint), msg, b)
+    return
+end
+get_expect_reply(msg::Message) =
+    @sdcall(sd_bus_message_get_expect_reply, (Ptr{Void},), msg) != 0
+
+function set_auto_start(msg::Message, b::Bool)
+    @sdcall(sd_bus_message_set_auto_start, (Ptr{Void}, Cint), msg, b)
+    return
+end
+get_auto_start(msg::Message) =
+    @sdcall(sd_bus_message_get_auto_start, (Ptr{Void},), msg) != 0
+
+function set_allow_interactive_authorization(msg::Message, b::Bool)
+    @sdcall(sd_bus_message_set_allow_interactive_authorization,
+            (Ptr{Void}, Cint), msg, b)
+    return
+end
+get_allow_interactive_authorization(msg::Message) =
+    @sdcall(sd_bus_message_get_allow_interactive_authorization,
+            (Ptr{Void},), msg) != 0
+
+get_signature(msg::Message, complete::Bool=true) =
+    unsafe_string(ccall((:sd_bus_message_get_signature, libsystemd),
+                        Ptr{UInt8}, (Ptr{Void}, Cint), msg, complete))
+get_path(msg::Message) =
+    unsafe_string(ccall((:sd_bus_message_get_path, libsystemd),
+                        Ptr{UInt8}, (Ptr{Void},), msg))
+get_interface(msg::Message) =
+    unsafe_string(ccall((:sd_bus_message_get_interface, libsystemd),
+                        Ptr{UInt8}, (Ptr{Void},), msg))
+get_member(msg::Message) =
+    unsafe_string(ccall((:sd_bus_message_get_member, libsystemd),
+                        Ptr{UInt8}, (Ptr{Void},), msg))
+get_destination(msg::Message) =
+    unsafe_string(ccall((:sd_bus_message_get_destination, libsystemd),
+                        Ptr{UInt8}, (Ptr{Void},), msg))
+get_sender(msg::Message) =
+    unsafe_string(ccall((:sd_bus_message_get_sender, libsystemd),
+                        Ptr{UInt8}, (Ptr{Void},), msg))
+
+# const sd_bus_error *sd_bus_message_get_error(sd_bus_message *m);
+# int sd_bus_message_get_errno(sd_bus_message *m);
 
 end
