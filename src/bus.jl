@@ -2,7 +2,7 @@
 
 module Buses
 
-import ..@sdcall, ..libsystemd
+import ..@sdcall, ..libsystemd, .._get_path
 
 const _Type = Base.Type
 
@@ -80,8 +80,8 @@ type Bus
         finalizer(self, unref)
         return self
     end
-    function Bus(::Void)
-        self = new(C_NULL)
+    function Bus(ptr::Ptr{Void})
+        self = new(ptr)
         finalizer(self, unref)
         return self
     end
@@ -103,49 +103,49 @@ function unref(bus::Bus)
 end
 
 function default()
-    bus = Bus(nothing)
+    bus = Bus(C_NULL)
     @sdcall(sd_bus_default, (Ref{Bus},), bus)
     return bus
 end
 
 function default_user()
-    bus = Bus(nothing)
+    bus = Bus(C_NULL)
     @sdcall(sd_bus_default_user, (Ref{Bus},), bus)
     return bus
 end
 
 function default_system()
-    bus = Bus(nothing)
+    bus = Bus(C_NULL)
     @sdcall(sd_bus_default_system, (Ref{Bus},), bus)
     return bus
 end
 
 function open()
-    bus = Bus(nothing)
+    bus = Bus(C_NULL)
     @sdcall(sd_bus_open, (Ref{Bus},), bus)
     return bus
 end
 
 function open_user()
-    bus = Bus(nothing)
+    bus = Bus(C_NULL)
     @sdcall(sd_bus_open_user, (Ref{Bus},), bus)
     return bus
 end
 
 function open_system()
-    bus = Bus(nothing)
+    bus = Bus(C_NULL)
     @sdcall(sd_bus_open_system, (Ref{Bus},), bus)
     return bus
 end
 
 function open_system_remote(host)
-    bus = Bus(nothing)
+    bus = Bus(C_NULL)
     @sdcall(sd_bus_open_system_remote, (Ref{Bus}, Cstring), bus, host)
     return bus
 end
 
 function open_system_machine(machine)
-    bus = Bus(nothing)
+    bus = Bus(C_NULL)
     @sdcall(sd_bus_open_system_machine, (Ref{Bus}, Cstring), bus, machine)
     return bus
 end
@@ -397,14 +397,67 @@ get_interface(msg::Message) =
 get_member(msg::Message) =
     unsafe_string(ccall((:sd_bus_message_get_member, libsystemd),
                         Ptr{UInt8}, (Ptr{Void},), msg))
+
+function set_destination(msg::Message, dest)
+    @sdcall(sd_bus_message_set_destination, (Ptr{Void}, Cstring),
+            msg, dest)
+    return
+end
 get_destination(msg::Message) =
     unsafe_string(ccall((:sd_bus_message_get_destination, libsystemd),
                         Ptr{UInt8}, (Ptr{Void},), msg))
+
 get_sender(msg::Message) =
     unsafe_string(ccall((:sd_bus_message_get_sender, libsystemd),
                         Ptr{UInt8}, (Ptr{Void},), msg))
 
 # const sd_bus_error *sd_bus_message_get_error(sd_bus_message *m);
 # int sd_bus_message_get_errno(sd_bus_message *m);
+
+function get_monotonic_usec(msg::Message)
+    usec = Ref{UInt64}(0)
+    @sdcall(sd_bus_message_get_monotonic_usec, (Ptr{Void}, Ptr{UInt64}),
+            msg, usec)
+    return usec[]
+end
+
+function get_realtime_usec(msg::Message)
+    usec = Ref{UInt64}(0)
+    @sdcall(sd_bus_message_get_realtime_usec, (Ptr{Void}, Ptr{UInt64}),
+            msg, usec)
+    return usec[]
+end
+
+function get_seqnum(msg::Message)
+    seq = Ref{UInt64}(0)
+    @sdcall(sd_bus_message_get_seqnum, (Ptr{Void}, Ptr{UInt64}),
+            msg, seq)
+    return seq[]
+end
+
+function get_bus(msg::Messgae)
+    ptr = ccall((:sd_bus_message_get_bus, libsystemd), Ptr{Void},
+                (Ptr{Void},), msg)
+    if ptr == C_NULL
+        throw(UndefVarError())
+    end
+    Bus(ccall((:sd_bus_ref, libsystemd), Ptr{Void}, (Ptr{Void},), ptr))
+end
+
+# sd_bus_creds *sd_bus_message_get_creds(sd_bus_message *m); /* do not unref the result */
+
+is_signal(msg::Message, iface=nothing, member=nothing) =
+    @sdcall(sd_bus_message_is_signal, (Ptr{Void}, Cstring, Cstring),
+            msg, _get_path(iface), _get_path(member)) != 0
+is_method_call(msg::Message, iface=nothing, member=nothing) =
+    @sdcall(sd_bus_message_is_method_call, (Ptr{Void}, Cstring, Cstring),
+            msg, _get_path(iface), _get_path(member)) != 0
+is_method_error(msg::Message, name=nothing) =
+    @sdcall(sd_bus_message_is_method_error, (Ptr{Void}, Cstring),
+            msg, _get_path(name)) != 0
+is_empty(msg::Message) =
+    @sdcall(sd_bus_message_is_empty, (Ptr{Void},), msg) != 0
+has_signature(msg::Message, sig) =
+    @sdcall(sd_bus_message_has_signature, (Ptr{Void}, Cstring), msg, sig) != 0
 
 end

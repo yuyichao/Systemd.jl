@@ -44,6 +44,9 @@ function event_to_rw(event)
     return event & POLLIN != 0, event & POLLOUT != 0
 end
 
+@inline _get_path(::Void) = C_NULL
+@inline _get_path(s) = s
+
 include("daemon.jl")
 include("login.jl")
 include("id128.jl")

@@ -28,9 +28,6 @@ const LISTEN_FDS_START = 3
 
 include("sockets.jl")
 
-@inline _get_path(::Void) = C_NULL
-@inline _get_path(s) = s
-
 """
     listen_fds([unset_environment::Bool]) -> Int
 
