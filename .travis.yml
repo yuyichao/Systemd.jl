@@ -1,0 +1,11 @@
+language: julia
+os:
+  - linux
+sudo: required
+dist: trusty
+julia:
+  - nightly
+notifications:
+  email: false
+after_success:
+  - julia -e 'cd(Pkg.dir("Systemd")); Pkg.add("Coverage"); using Coverage; Codecov.submit(process_folder())'
