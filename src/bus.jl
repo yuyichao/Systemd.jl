@@ -2,7 +2,7 @@
 
 module Buses
 
-import ..@sdcall, ..libsystemd, .._get_path
+import ..@sdcall, ..libsystemd, .._get_path, ..ID128_NULL, ..ID128, ..consume_string
 
 const _Type = Base.Type
 
@@ -162,7 +162,7 @@ end
 function get_address(bus::Bus)
     address = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_bus_get_address, (Ptr{Void}, Ptr{Ptr{Cchar}}), bus, address)
-    return unsafe_wrap(String, address[], true)
+    return consume_string(address[])
 end
 
 function set_fd(bus::Bus, input_fd, output_fd)
@@ -213,7 +213,7 @@ end
 function get_description(bus::Bus)
     desc = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_bus_get_description, (Ptr{Void}, Ptr{Ptr{Cchar}}), bus, desc)
-    return unsafe_wrap(String, desc[], true)
+    return consume_string(desc[])
 end
 
 function negotiate_creds(bus::Bus, b::Bool, mask=UInt64(0))
@@ -273,7 +273,7 @@ end
 function get_scope(bus::Bus)
     scope = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_bus_get_scope, (Ptr{Void}, Ptr{Ptr{Cchar}}), bus, scope)
-    return unsafe_wrap(String, scope[], true)
+    return consume_string(scope[])
 end
 function get_tid(bus::Bus)
     tid = Ref{Int32}()
@@ -435,7 +435,7 @@ function get_seqnum(msg::Message)
     return seq[]
 end
 
-function get_bus(msg::Messgae)
+function get_bus(msg::Message)
     ptr = ccall((:sd_bus_message_get_bus, libsystemd), Ptr{Void},
                 (Ptr{Void},), msg)
     if ptr == C_NULL

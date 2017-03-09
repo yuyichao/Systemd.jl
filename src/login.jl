@@ -1,7 +1,7 @@
 #
 
 module Pid
-import ..@sdcall
+import ..@sdcall, ..consume_string
 
 """
     Pid.get_session(pid) -> String
@@ -14,7 +14,7 @@ user.
 function get_session(pid)
     session = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_pid_get_session, (Cint, Ptr{Ptr{Cchar}}), pid, session)
-    return unsafe_wrap(String, session[], true)
+    return consume_string(session[])
 end
 
 """
@@ -41,7 +41,7 @@ services. This will throw an error for non-service processes.
 function get_unit(pid)
     unit = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_pid_get_unit, (Cint, Ptr{Ptr{Cchar}}), pid, unit)
-    return unsafe_wrap(String, unit[], true)
+    return consume_string(unit[])
 end
 
 """
@@ -53,7 +53,7 @@ services. This will return an error for non-user-service processes.
 function get_user_unit(pid)
     unit = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_pid_get_user_unit, (Cint, Ptr{Ptr{Cchar}}), pid, unit)
-    return unsafe_wrap(String, unit[], true)
+    return consume_string(unit[])
 end
 
 """
@@ -64,7 +64,7 @@ Get slice name from PID.
 function get_slice(pid)
     slice = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_pid_get_slice, (Cint, Ptr{Ptr{Cchar}}), pid, slice)
-    return unsafe_wrap(String, slice[], true)
+    return consume_string(slice[])
 end
 
 """
@@ -75,7 +75,7 @@ Get user slice name from PID.
 function get_user_slice(pid)
     slice = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_pid_get_user_slice, (Cint, Ptr{Ptr{Cchar}}), pid, slice)
-    return unsafe_wrap(String, slice[], true)
+    return consume_string(slice[])
 end
 
 """
@@ -87,7 +87,7 @@ container. This will return an error for non-machine processes.
 function get_machine_name(pid)
     machine_name = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_pid_get_machine_name, (Cint, Ptr{Ptr{Cchar}}), pid, machine_name)
-    return unsafe_wrap(String, machine_name[], true)
+    return consume_string(machine_name[])
 end
 
 """
@@ -99,7 +99,7 @@ hierarchy.
 function get_cgroup(pid)
     cgroup = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_pid_get_cgroup, (Cint, Ptr{Ptr{Cchar}}), pid, cgroup)
-    return unsafe_wrap(String, cgroup[], true)
+    return consume_string(cgroup[])
 end
 end
 
@@ -115,7 +115,7 @@ of a connected `AF.UNIX` socket.
 function get_session(fd)
     slice = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_peer_get_session, (Cint, Ptr{Ptr{Cchar}}), fd, slice)
-    return unsafe_wrap(String, slice[], true)
+    return consume_string(slice[])
 end
 
 """
@@ -139,7 +139,7 @@ a connected `AF.UNIX` socket
 function get_unit(fd)
     slice = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_peer_get_unit, (Cint, Ptr{Ptr{Cchar}}), fd, slice)
-    return unsafe_wrap(String, slice[], true)
+    return consume_string(slice[])
 end
 
 """
@@ -151,7 +151,7 @@ a connected `AF.UNIX` socket
 function get_user_unit(fd)
     slice = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_peer_get_user_unit, (Cint, Ptr{Ptr{Cchar}}), fd, slice)
-    return unsafe_wrap(String, slice[], true)
+    return consume_string(slice[])
 end
 
 """
@@ -163,7 +163,7 @@ a connected `AF.UNIX` socket
 function get_slice(fd)
     slice = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_peer_get_slice, (Cint, Ptr{Ptr{Cchar}}), fd, slice)
-    return unsafe_wrap(String, slice[], true)
+    return consume_string(slice[])
 end
 
 """
@@ -175,7 +175,7 @@ a connected `AF.UNIX` socket
 function get_user_slice(fd)
     slice = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_peer_get_user_slice, (Cint, Ptr{Ptr{Cchar}}), fd, slice)
-    return unsafe_wrap(String, slice[], true)
+    return consume_string(slice[])
 end
 
 """
@@ -187,7 +187,7 @@ peer of a connected `AF.UNIX` socket
 function get_machine_name(fd)
     machine_name = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_peer_get_machine_name, (Cint, Ptr{Ptr{Cchar}}), fd, machine_name)
-    return unsafe_wrap(String, machine_name[], true)
+    return consume_string(machine_name[])
 end
 
 """
@@ -199,7 +199,7 @@ of a connected `AF.UNIX` socket.
 function get_cgroup(fd)
     cgroup = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_peer_get_cgroup, (Cint, Ptr{Ptr{Cchar}}), fd, cgroup)
-    return unsafe_wrap(String, cgroup[], true)
+    return consume_string(cgroup[])
 end
 end
 
@@ -214,7 +214,7 @@ Get state from UID. Possible states: offline, lingering, online, active, closing
 function get_state(uid)
     state = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_uid_get_state, (Cint, Ptr{Ptr{Cchar}}), uid, state)
-    return unsafe_wrap(String, state[], true)
+    return consume_string(state[])
 end
 
 """
@@ -225,7 +225,7 @@ Return primary session of user, if there is any
 function get_display(uid)
     display = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_uid_get_display, (Cint, Ptr{Ptr{Cchar}}), uid, display)
-    return unsafe_wrap(String, display[], true)
+    return consume_string(display[])
 end
 
 """
@@ -293,7 +293,7 @@ This function is a more generic version of `Session.is_active`.
 function get_state(session)
     state = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_session_get_state, (Cstring, Ptr{Ptr{Cchar}}), session, state)
-    return unsafe_wrap(String, state[], true)
+    return consume_string(state[])
 end
 
 """
@@ -315,7 +315,7 @@ Determine seat of `session`
 function get_seat(session)
     seat = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_session_get_seat, (Cstring, Ptr{Ptr{Cchar}}), session, seat)
-    return unsafe_wrap(String, seat[], true)
+    return consume_string(seat[])
 end
 
 """
@@ -326,7 +326,7 @@ Determine the (PAM) service name this `session` was registered by.
 function get_service(session)
     service = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_session_get_service, (Cstring, Ptr{Ptr{Cchar}}), session, service)
-    return unsafe_wrap(String, service[], true)
+    return consume_string(service[])
 end
 
 """
@@ -338,7 +338,7 @@ Determine the type of this `session`, i.e. one of
 function get_type(session)
     typ = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_session_get_type, (Cstring, Ptr{Ptr{Cchar}}), session, typ)
-    return unsafe_wrap(String, typ[], true)
+    return consume_string(typ[])
 end
 
 """
@@ -350,7 +350,7 @@ i.e. one of "user", "greeter" or "lock-screen".
 function get_class(session)
     class = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_session_get_class, (Cstring, Ptr{Ptr{Cchar}}), session, class)
-    return unsafe_wrap(String, class[], true)
+    return consume_string(class[])
 end
 
 """
@@ -362,7 +362,7 @@ i.e. something like "GNOME", "KDE" or "systemd-console".
 function get_desktop(session)
     desktop = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_session_get_desktop, (Cstring, Ptr{Ptr{Cchar}}), session, desktop)
-    return unsafe_wrap(String, desktop[], true)
+    return consume_string(desktop[])
 end
 
 """
@@ -373,7 +373,7 @@ Determine the X11 display of this `session`.
 function get_display(session)
     display = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_session_get_display, (Cstring, Ptr{Ptr{Cchar}}), session, display)
-    return unsafe_wrap(String, display[], true)
+    return consume_string(display[])
 end
 
 """
@@ -385,7 +385,7 @@ function get_remote_host(session)
     remote_host = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_session_get_remote_host, (Cstring, Ptr{Ptr{Cchar}}),
             session, remote_host)
-    return unsafe_wrap(String, remote_host[], true)
+    return consume_string(remote_host[])
 end
 
 """
@@ -397,7 +397,7 @@ function get_remote_user(session)
     remote_user = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_session_get_remote_user, (Cstring, Ptr{Ptr{Cchar}}),
             session, remote_user)
-    return unsafe_wrap(String, remote_user[], true)
+    return consume_string(remote_user[])
 end
 
 """
@@ -408,7 +408,7 @@ Determine the TTY of this `session`.
 function get_tty(session)
     tty = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_session_get_tty, (Cstring, Ptr{Ptr{Cchar}}), session, tty)
-    return unsafe_wrap(String, tty[], true)
+    return consume_string(tty[])
 end
 
 """
@@ -436,7 +436,7 @@ function get_active(seat)
     session = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_seat_get_active, (Cstring, Ptr{Ptr{Cchar}}, Ptr{Int32}),
             seat, session, user)
-    return unsafe_wrap(String, session[], true), user[]
+    return consume_string(session[]), user[]
 end
 
 """
@@ -491,7 +491,7 @@ Return the class of `machine`
 function get_class(machine)
     class = Ref{Ptr{Cchar}}(C_NULL)
     @sdcall(sd_machine_get_class, (Cstring, Ptr{Ptr{Cchar}}), machine, class)
-    return unsafe_wrap(String, class[], true)
+    return consume_string(class[])
 end
 
 """

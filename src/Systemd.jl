@@ -27,11 +27,20 @@ macro sdcall(fname::Symbol, argtypes, args...)
     end
 end
 
+function consume_string(ptr)
+    str = unsafe_string(ptr)
+    Libc.free(ptr)
+    str
+end
+
 function consume_pstring(_ptr::Ptr, len)
     res = Vector{String}(len)
     ptr = Ptr{Ptr{Cchar}}(_ptr)
     @inbounds for i in 1:len
-        res[i] = unsafe_wrap(String, unsafe_load(ptr, i), true)
+        strptr = unsafe_load(ptr, i)
+        if strptr != C_NULL
+            res[i] = consume_string(strptr)
+        end
     end
     Libc.free(ptr)
     res

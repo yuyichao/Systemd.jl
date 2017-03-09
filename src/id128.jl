@@ -3,7 +3,7 @@
 
 const STRING_MAX = 33
 
-immutable ID128
+struct ID128
     v1::Int64
     v2::Int64
     ID128(v1, v2) = new(v1, v2)
