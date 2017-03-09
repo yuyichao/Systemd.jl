@@ -14,6 +14,7 @@ arch:
     - xdelta3
     - http-parser
   script:
+    - ls /sys/fs/cgroup
     - julia -e 'Pkg.clone(pwd())'
     - julia -e 'Pkg.build("Systemd")'
     - julia --check-bounds=yes -e 'Pkg.test("Systemd", coverage=true)'
