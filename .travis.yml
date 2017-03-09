@@ -14,14 +14,10 @@ arch:
     - xdelta3
     - http-parser
   script:
-    - ls /
-    - ls /proc
-    - ls /sys/fs/cgroup
-    - ls /run
     - julia -e 'Pkg.clone(pwd())'
     - julia -e 'Pkg.build("Systemd")'
     - julia --check-bounds=yes -e 'Pkg.test("Systemd", coverage=true)'
     - julia -e 'cd(Pkg.dir("Systemd")); Pkg.add("Coverage"); using Coverage; Codecov.submit(process_folder())'
 
 script:
-  - "curl -s https://raw.githubusercontent.com/mikkeloscar/arch-travis/master/arch-travis.sh | bash"
+  - bash arch-travis.sh
