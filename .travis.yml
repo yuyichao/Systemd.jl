@@ -1,0 +1,15 @@
+sudo: required
+language: julia
+services:
+  - docker
+before_install:
+  - docker pull ubuntu:16.04
+  - docker run -ti ubuntu /usr/lib/systemd/systemd
+julia:
+  - 0.6
+  - nightly
+script:
+  - julia -e 'Pkg.clone(pwd())'
+  - julia -e 'Pkg.build("Systemd")'
+  - julia --check-bounds=yes -e 'Pkg.test("Systemd", coverage=true)'
+  - julia -e 'cd(Pkg.dir("Systemd")); Pkg.add("Coverage"); using Coverage; Codecov.submit(process_folder())'
