@@ -552,7 +552,7 @@ function get_machine_names()
     return consume_pstring(machine_names[], nmachine_names)
 end
 
-type LoginMonitor
+mutable struct LoginMonitor
     ptr::Ptr{Void}
     """
         LoginMonitor([category])

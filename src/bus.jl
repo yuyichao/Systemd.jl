@@ -72,7 +72,7 @@ const DICT_ENTRY_BEGIN = UInt8('{')
 const DICT_ENTRY_END = UInt8('}')
 end
 
-type Bus
+mutable struct Bus
     ptr::Ptr{Void}
     function Bus()
         self = new()
@@ -283,7 +283,7 @@ end
 
 # int sd_bus_get_owner_creds(sd_bus *bus, uint64_t creds_mask, sd_bus_creds **ret);
 
-type Message
+mutable struct Message
     ptr::Ptr{Void}
     function Message()
         self = new(C_NULL)
