@@ -11,4 +11,4 @@ before_install:
   - docker build -t archjl travis/ --build-arg JULIA_VERSION=$ARCHJL_JULIA_VERSION
   - docker run -d --privileged -v ${PWD}:${PWD} archjl /usr/lib/systemd/systemd | sudo tee /docker-name
 script:
-  - sudo bash travis/runtest.sh
+  - bash travis/runtest.sh

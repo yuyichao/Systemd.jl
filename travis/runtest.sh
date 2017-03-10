@@ -1,8 +1,7 @@
 #!/bin/bash
 
-envs=$(declare -xp | grep 'export TRAVIS_')
-
-docker exec $(cat /docker-name) bash -c "$envs; cd $PWD; exec bash $PWD/travis/docker_test.sh"
+envs=$(declare -xp | grep 'TRAVIS_')
+sudo docker exec $(cat /docker-name) bash -c "$envs; cd $PWD; exec bash $PWD/travis/docker_test.sh"
 ret=$?
-docker kill $(cat /docker-name)
+sudo docker kill $(cat /docker-name)
 exit $ret
