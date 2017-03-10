@@ -1,15 +1,14 @@
 sudo: required
-language: julia
+dist: trusty
 services:
   - docker
+language: c
+matrix:
+  include:
+    - env: ARCHJL_JULIA_VERSION=0.6
+    - env: ARCHJL_JULIA_VERSION=nightly
 before_install:
-  - docker pull ubuntu:16.04
-  - docker run -ti ubuntu /usr/lib/systemd/systemd
-julia:
-  - 0.6
-  - nightly
+  - docker build -t archjl travis/ --build-arg JULIA_VERSION=$ARCHJL_JULIA_VERSION
+  - docker run -d --privileged -v ${PWD}:${PWD} archjl /usr/lib/systemd/systemd | sudo tee /docker-name
 script:
-  - julia -e 'Pkg.clone(pwd())'
-  - julia -e 'Pkg.build("Systemd")'
-  - julia --check-bounds=yes -e 'Pkg.test("Systemd", coverage=true)'
-  - julia -e 'cd(Pkg.dir("Systemd")); Pkg.add("Coverage"); using Coverage; Codecov.submit(process_folder())'
+  - sudo bash travis/runtest.sh
